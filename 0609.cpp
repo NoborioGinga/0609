@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <assert.h>
+#include <memory>
 
 //class Test 
 //{
@@ -47,41 +48,43 @@ class Player
 {
 	std::shared_ptr<Weapon> weapon;
 public:
-	Player(std::shared_ptr<Weapon> weapon1) :weapon(weapon1) {
-		std::cout << weapon.use_count() << std::endl;
-		std::cout << weapon1.use_count() << std::endl;
-
-	}
-
-	void Attack()
-	{
-		 weapon->Use();
 	
-	}
 
+		// lvalue (参照) を受け取るコンストラクタ（コピー）
+		Player(const std::shared_ptr<Weapon>&weapon1) :weapon(weapon1) {
+			std::cout << weapon.use_count() << std::endl;
+			std::cout << weapon1.use_count() << std::endl;
+		}
+
+		// rvalue を受け取るコンストラクタ（ムーブ）
+		Player(std::shared_ptr<Weapon> && weapon1) :weapon(std::move(weapon1)) {
+			std::cout << weapon.use_count() << std::endl;
+			std::cout << weapon1.use_count() << std::endl;
+		}
+
+
+	
+
+	
 
 };
 
-int main() 
 
+class Sword : public Weapon
 {
-	auto a = std::make_shared<Player>(std::make_shared<Weapon>());
 
-	std::cout << "a:" << a.use_count() << std::endl;
+};
 
-	auto b = a;
 
-	std::cout << "a:" << a.use_count() << std::endl;
-	std::cout << "b:" << b.use_count() << std::endl;
 
-	auto c = std::move(a);
 
-	std::cout << "a:" << a.use_count() << std::endl;
-	std::cout << "b:" << b.use_count() << std::endl;
-	std::cout << "c:" << c.use_count() << std::endl;
+int main() 
+{
 
-	assert(a != nullptr);
-	a->Attack();
+	auto sword = std::make_shared<Sword>();
+
+	Player p1(std::move(sword));
+
 
 
 		
