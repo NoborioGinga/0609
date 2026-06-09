@@ -4,88 +4,49 @@
 #include <iostream>
 #include <assert.h>
 #include <memory>
-
-//class Test 
-//{
-//public:
-//	void Show()
-//	{
-//		std::cout << "Hello World!!" << std::endl;
-//	}
-//
-//
-//
-//};
-//
-//void Func(Test* test)
-//{
-//	assert(test != nullptr);
-//	test->Show();
-//}
-//
-//int main()
-//{
-//
-//	Func(new Test());
-//	Func(nullptr);
-//   
-//
-//}
-
-
-
+#include <stdexcept>
 
 class Weapon
 {
 public:
-
-	void Use(){}
-
-
+	void Use() {}
 };
 
 class Player
 {
-	std::shared_ptr<Weapon> weapon;
+	// 初期化保証: コンストラクタで必ず有効な shared_ptr を受け取り、メンバは const として保持する
+	const std::shared_ptr<Weapon> weapon;
+
 public:
-	
-
-		// lvalue (参照) を受け取るコンストラクタ（コピー）
-		Player(const std::shared_ptr<Weapon>&weapon1) :weapon(weapon1) {
-			std::cout << weapon.use_count() << std::endl;
-			std::cout << weapon1.use_count() << std::endl;
+	// 値渡しで受け取りコンストラクタ内でムーブするスタイル:
+	// 呼び出し元は std::move() してムーブ渡しするか、コピーした shared_ptr を渡す
+	// null を許容しない設計のため、null だったら例外を投げる（初期化保証）
+	explicit Player(std::shared_ptr<Weapon> weapon1) : weapon(std::move(weapon1))
+	{
+		if (!weapon)
+		{
+			throw std::invalid_argument("weapon must not be null");
 		}
+	}
 
-		// rvalue を受け取るコンストラクタ（ムーブ）
-		Player(std::shared_ptr<Weapon> && weapon1) :weapon(std::move(weapon1)) {
-			std::cout << weapon.use_count() << std::endl;
-			std::cout << weapon1.use_count() << std::endl;
-		}
-
-
-	
-
-	
-
+	void Attack()
+	{
+		// コンストラクタで non-null を保証しているため、null チェック不要
+		weapon->Use();
+	}
 };
-
 
 class Sword : public Weapon
 {
-
 };
 
 
-
-
-int main() 
+int main()
 {
-
 	auto sword = std::make_shared<Sword>();
 
+	// 所有権をムーブして Player を初期化（sword は空になる）
 	Player p1(std::move(sword));
 
-
-
-		
+	// p1.Attack(); // 安全に呼べる（コンストラクタにより weapon は常に有効）
 }
